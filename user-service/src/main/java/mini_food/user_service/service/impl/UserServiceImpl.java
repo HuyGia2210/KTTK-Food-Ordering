@@ -7,11 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import mini_food.user_service.entity.User;
 import mini_food.user_service.repository.UserRepository;
 import mini_food.user_service.service.UserService;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,7 +24,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     final UserRepository userRepository;
-    final AuthenticationManager authenticationManager;
     final JwtService jwtService;
 
     public List<User> findAll() {
@@ -36,24 +31,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void registerUser(String username, String email, String password) {
-        // Kiểm tra nếu username hoặc email đã tồn tại
-        if (userRepository.findByUsername(username) != null) {
-            throw new IllegalArgumentException("Username đã tồn tại!");
-        }
-        if (userRepository.findByEmail(email) != null) {
-            throw new IllegalArgumentException("Email đã tồn tại!");
-        }
-
-        // Tạo và lưu người dùng mới
-        User newUser = new User();
-        newUser.setUsername(username);
-        newUser.setEmail(email);
-        newUser.setPassword(password); // Lưu mật khẩu chưa mã hóa (chỉ để demo, không nên làm vậy trong thực tế)
-        userRepository.save(newUser);
-    }
-
     public User save(User user) {
+        if (userRepository.findByUsername(user.getUsername()) != null) {
+            throw new IllegalArgumentException("Username da ton tai");
+        }
+        if (user.getEmail() != null && userRepository.findByEmail(user.getEmail()) != null) {
+            throw new IllegalArgumentException("Email da ton tai");
+        }
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole("USER");
+        }
         return userRepository.save(user);
     }
 
@@ -74,16 +61,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String verify(String username, String password) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-        if (auth.isAuthenticated()) {
-            log.info("User authenticated");
-            return jwtService.generateToken(username);
-        } else {
+        User user = userRepository.findByUsername(username);
+        if (user == null || !user.getPassword().equals(password)) {
             log.error("User not authenticated");
-            return "400";
+            throw new IllegalArgumentException("Sai tai khoan hoac mat khau");
         }
+        log.info("User authenticated");
+        return jwtService.generateToken(username);
     }
 
     public String verifyWithoutAuth(String username) {

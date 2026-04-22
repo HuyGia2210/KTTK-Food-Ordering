@@ -11,8 +11,6 @@ import java.util.List;
  * @package mini_food.user_service.service
  */
 public interface UserService {
-    void registerUser(String username, String email, String password);
-
     User findByUsername(String username);
 
     User findByEmail(String email);

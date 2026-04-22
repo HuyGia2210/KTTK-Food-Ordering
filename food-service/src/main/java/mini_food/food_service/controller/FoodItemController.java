@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/food-items")
+@RequestMapping({"/foods", "/api/food-items"})
 public class FoodItemController {
 
     private final FoodItemService foodItemService;

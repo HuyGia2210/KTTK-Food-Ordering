@@ -1,6 +1,7 @@
 package mini_food.user_service.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,5 +27,7 @@ public class User {
 
     private String username;
     private String email;
+    private String role;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 }
