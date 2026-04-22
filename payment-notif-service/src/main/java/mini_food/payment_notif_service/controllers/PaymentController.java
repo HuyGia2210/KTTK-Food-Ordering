@@ -6,17 +6,17 @@ import lombok.experimental.FieldDefaults;
 import mini_food.payment_notif_service.dto.request.PaymentRequest;
 import mini_food.payment_notif_service.services.PaymentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/payments")
+@CrossOrigin(origins = "${app.cors.allowed-origins:*}")
+@RequestMapping({"/payments", "/api/v1/payments", "/api/payments"})
 public class PaymentController {
     PaymentService paymentService;
 

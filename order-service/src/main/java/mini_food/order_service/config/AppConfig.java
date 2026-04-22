@@ -1,4 +1,4 @@
-package mini_food.payment_notif_service.config;
+package mini_food.order_service.config;
 
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;

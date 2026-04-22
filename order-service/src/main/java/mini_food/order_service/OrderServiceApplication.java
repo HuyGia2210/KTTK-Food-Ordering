@@ -7,6 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class OrderServiceApplication {
 
 	public static void main(String[] args) {
+		if (System.getProperty("EUREKA_ENABLED") == null && System.getenv("EUREKA_ENABLED") == null) {
+			System.setProperty("EUREKA_ENABLED", "true");
+		}
 		SpringApplication.run(OrderServiceApplication.class, args);
 	}
 

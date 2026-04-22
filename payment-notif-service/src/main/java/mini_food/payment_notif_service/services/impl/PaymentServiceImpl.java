@@ -24,6 +24,7 @@ public class PaymentServiceImpl implements PaymentService {
     @NonFinal
     @Value("${app.order-service-url}")
     String orderServiceUrl;
+
     public boolean processAndNotify(PaymentRequest request) {
         Payment payment = new Payment();
         payment.setOrderId(request.getOrderId());
@@ -33,7 +34,10 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
 
         try {
-            String updateUrl = orderServiceUrl + "/orders/" + request.getOrderId() + "/status?status=PAID";
+            String normalizedOrderServiceUrl = orderServiceUrl
+                    .replace("http://1localhost", "http://localhost")
+                    .replaceAll("/+$", "");
+            String updateUrl = normalizedOrderServiceUrl + "/orders/" + request.getOrderId() + "/status?status=PAID";
             restTemplate.put(updateUrl, null);
 
         } catch (Exception e) {
