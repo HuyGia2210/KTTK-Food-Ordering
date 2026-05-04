@@ -1,9 +1,9 @@
-#Thông tin nhóm:
--Lê Trần Gia Huy
--Huỳnh Đức Phú
--Đặng Nguyễn Tiến Phát
--Nguyễn Anh Tùng
--Lê Nguyễn Quỳnh
+# Thông tin nhóm:
+- Lê Trần Gia Huy
+- Huỳnh Đức Phú
+- Đặng Nguyễn Tiến Phát
+- Nguyễn Anh Tùng
+- Lê Nguyễn Quỳnh
 
 # KTTK Food Ordering
 
