@@ -1,3 +1,10 @@
+Thông tin nhóm:
+Lê Trần Gia Huy
+Huỳnh Đức Phú
+Đặng Nguyễn Tiến Phát
+Nguyễn Anh Tùng
+Lê Nguyễn Quỳnh
+
 # KTTK Food Ordering
 
 Hệ thống `KTTK Food Ordering` là một dự án microservices mô phỏng bài toán đặt món ăn trực tuyến. Repository này hiện đóng vai trò bộ khung ban đầu cho kiến trúc hệ thống, sử dụng Spring Boot và Spring Cloud để tách các domain thành nhiều service độc lập, kết nối với nhau thông qua service discovery.
