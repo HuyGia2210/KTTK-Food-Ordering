@@ -11,33 +11,34 @@ import mini_food.order_service.entity.Order;
 import mini_food.order_service.entity.OrderItem;
 import mini_food.order_service.entity.OrderStatus;
 import mini_food.order_service.repository.OrderRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatusCode;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
     private final OrderRepository orderRepository;
-    private final RestTemplate restTemplate;
-    private final String userServiceUrl;
-    private final String foodServiceUrl;
+    private final ExternalServiceClient externalServiceClient;
 
     public OrderService(
             OrderRepository orderRepository,
-            RestTemplate restTemplate,
-            @Value("${services.user.url}") String userServiceUrl,
-            @Value("${services.food.url}") String foodServiceUrl
+            ExternalServiceClient externalServiceClient
     ) {
         this.orderRepository = orderRepository;
-        this.restTemplate = restTemplate;
-        this.userServiceUrl = userServiceUrl;
-        this.foodServiceUrl = foodServiceUrl;
+        this.externalServiceClient = externalServiceClient;
     }
 
+    @CircuitBreaker(name = "orderService", fallbackMethod = "createOrderFallback")
+    @RateLimiter(name = "orderService")
+    @Retry(name = "orderService")
     public Order createOrder(CreateOrderRequest request) {
-        UserResponse user = fetchUser(request.getUserId());
+        // Gọi User Service (đã có CircuitBreaker + Retry ở ExternalServiceClient)
+        UserResponse user = externalServiceClient.fetchUser(request.getUserId());
         Order order = new Order();
         order.setUserId(user.getId());
         order.setUsername(user.getUsername());
@@ -46,7 +47,8 @@ public class OrderService {
         List<OrderItem> items = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderItemRequest itemRequest : request.getItems()) {
-            FoodResponse food = fetchFood(itemRequest.getFoodId());
+            // Gọi Food Service (đã có CircuitBreaker + Retry ở ExternalServiceClient)
+            FoodResponse food = externalServiceClient.fetchFood(itemRequest.getFoodId());
             if (Boolean.FALSE.equals(food.getAvailable())) {
                 throw new IllegalArgumentException("Mon an khong kha dung: " + food.getId());
             }
@@ -68,10 +70,18 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public Order createOrderFallback(CreateOrderRequest request, Throwable throwable) {
+        log.error("CircuitBreaker [orderService] - createOrder failed. Error: {}", throwable.getMessage());
+        throw new RuntimeException("Dich vu tam thoi khong kha dung. Vui long thu lai sau. Loi: " + throwable.getMessage());
+    }
+
+    @RateLimiter(name = "orderService")
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
+    @CircuitBreaker(name = "orderService", fallbackMethod = "updateStatusFallback")
+    @Retry(name = "orderService")
     public Order updateStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Khong tim thay don hang: " + orderId));
@@ -79,31 +89,8 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    private UserResponse fetchUser(Long userId) {
-        try {
-            return restTemplate.getForObject(
-                    userServiceUrl + "/users/" + userId,
-                    UserResponse.class
-            );
-        } catch (HttpClientErrorException ex) {
-            if (ex.getStatusCode().equals(HttpStatusCode.valueOf(404))) {
-                throw new IllegalArgumentException("Khong tim thay user: " + userId);
-            }
-            throw ex;
-        }
-    }
-
-    private FoodResponse fetchFood(Long foodId) {
-        try {
-            return restTemplate.getForObject(
-                    foodServiceUrl + "/foods/" + foodId,
-                    FoodResponse.class
-            );
-        } catch (HttpClientErrorException ex) {
-            if (ex.getStatusCode().equals(HttpStatusCode.valueOf(404))) {
-                throw new IllegalArgumentException("Khong tim thay mon an: " + foodId);
-            }
-            throw ex;
-        }
+    public Order updateStatusFallback(Long orderId, OrderStatus status, Throwable throwable) {
+        log.error("CircuitBreaker [orderService] - updateStatus failed. OrderId: {}, Error: {}", orderId, throwable.getMessage());
+        throw new RuntimeException("Khong the cap nhat trang thai don hang. Vui long thu lai sau.");
     }
 }
